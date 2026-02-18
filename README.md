@@ -1,6 +1,6 @@
 # Movie Tracker Deluxe 🎬
 
-A Google Apps Script project for tracking movies, built with a modern **Vite + TypeScript** workflow.
+A Google Apps Script project for tracking movies.
 
 ## 🚀 Cloning & Setup
 
