@@ -49,7 +49,7 @@ This command:
 
 ### Deployment
 
-To deploy to Google Apps Script manually:
+Optional: To deploy to Google Apps Script manually:
 
 ```bash
 npx clasp push
