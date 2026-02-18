@@ -1,0 +1,20 @@
+{
+  "name": "movie",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Code.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && cp dist/index.html index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/google-apps-script": "^2.0.8",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}

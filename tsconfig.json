@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "moduleResolution": "node",
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "Code.ts"]
+}

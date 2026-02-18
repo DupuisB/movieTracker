@@ -1,0 +1,18 @@
+# Node.js
+node_modules/
+dist/
+npm-debug.log*
+
+# Mac
+.DS_Store
+
+# Clasp / Apps Script
+.clasprc.json
+.clasp.json  # Optional: keep if you want to share config, but remove if it contains sensitive scriptId (usually scriptId is public though)
+appsscript.json # This should be tracked as it defines project config
+
+# Build artifacts
+index.html
+
+# Local env
+.env

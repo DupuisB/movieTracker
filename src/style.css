@@ -1,0 +1,131 @@
+/* --- Basic Body and Container Styling --- */
+body {
+  background-color: #f8f9fa; /* Light grey background */
+  padding-top: 1rem; /* Add some space at the top */
+  padding-bottom: 1rem; /* Add some space at the bottom */
+}
+
+.container {
+  max-width: 1200px; /* Limit max width for very large screens */
+}
+
+/* --- Card Styling --- */
+.card {
+  margin-bottom: 1.5rem; /* Consistent spacing between cards */
+  border: 1px solid rgba(0, 0, 0, 0.125); /* Default Bootstrap border */
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Default Bootstrap shadow */
+}
+
+.card-header {
+  font-weight: 500; /* Slightly less bold than default maybe */
+  background-color: rgba(0, 0, 0, 0.03); /* Standard light card header */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header.bg-primary {
+  background-color: #0d6efd !important; /* Ensure Bootstrap primary color overrides */
+  color: white;
+}
+.card-header.bg-success {
+  background-color: #198754 !important; /* Ensure Bootstrap success color overrides */
+  color: white;
+}
+
+/* --- Search Results Card Specifics --- */
+#searchResults .card {
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  height: 100%; /* Make cards in a row equal height using Bootstrap's grid */
+}
+
+#searchResults .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+#searchResults .card-img-top {
+  width: 100%;
+  height: 280px; /* Slightly taller poster image */
+  object-fit: cover; /* Scale the image nicely */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125); /* Add border below image */
+}
+
+#searchResults .card-body {
+  display: flex;
+  flex-direction: column; /* Arrange items vertically */
+  justify-content: space-between; /* Push button to bottom */
+  padding: 1rem; /* Standard padding */
+}
+
+#searchResults .card-title {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+#searchResults .card-text {
+  font-size: 0.88rem;
+  color: #6c757d; /* Secondary text color */
+  flex-grow: 1; /* Allow text to take up available space */
+  overflow: hidden; /* Prevent overflow */
+  text-overflow: ellipsis; /* Add ellipsis for long text */
+  /* Limit description to a few lines (using webkit prefix for broader compatibility) */
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* Limit to 4 lines */
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  margin-bottom: 1rem; /* Space before button */
+}
+
+#searchResults .btn-add-movie {
+  width: 100%; /* Make button full width */
+  margin-top: auto; /* Ensure it stays at the bottom */
+}
+
+/* --- Movie List Table Styling --- */
+.table {
+  margin-bottom: 0; /* Remove default table margin if inside a card */
+}
+
+#movieTableBody img {
+  max-width: 45px; /* Slightly larger image in table */
+  height: auto;
+  vertical-align: middle; /* Align image nicely */
+  border-radius: 3px; /* Slightly rounded corners */
+}
+
+#movieTableBody .badge {
+  font-size: 0.9em; /* Slightly larger badge text */
+  padding: 0.4em 0.6em; /* Adjust badge padding */
+}
+
+/* Center text in specific table columns if desired */
+#movieTableBody td:nth-child(2), /* Poster column */
+  #movieTableBody td:nth-child(3) {
+  /* IMDb/Trailer column */
+  text-align: center;
+}
+
+#movieTableBody td {
+  vertical-align: middle; /* Vertically center all cell content */
+}
+
+/* --- Icons --- */
+.fa-clapperboard {
+  color: #e6b91e; /* Use a gold/yellow color for IMDb icon */
+  font-size: 1.2em; /* Slightly larger icon */
+}
+
+/* --- Utility --- */
+.text-center {
+  text-align: center !important; /* Ensure helper class works */
+}
+
+.mt-auto {
+  margin-top: auto !important; /* Ensure helper class works */
+}
+
+.shadow-sm {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
