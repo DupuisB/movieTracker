@@ -1,22 +1,43 @@
-  // --- Global variables ---
-  declare const google: any;
+  // --- Global Declaration for Google Apps Script ---
+  export {}; // Make this file a module to avoid global scope collisions with Code.ts
 
-  const searchInput = document.getElementById('searchInput') as HTMLInputElement;
-  const searchButton = document.getElementById('searchButton') as HTMLButtonElement;
-  const searchSpinner = document.getElementById('searchSpinner') as HTMLElement;
-  const searchResultsDiv = document.getElementById('searchResults') as HTMLElement;
-  const searchErrorDiv = document.getElementById('searchError') as HTMLElement;
-  const movieListLoadingDiv = document.getElementById('movieListLoading') as HTMLElement;
-  const movieListErrorDiv = document.getElementById('movieListError') as HTMLElement;
-  const movieTableBody = document.getElementById('movieTableBody') as HTMLElement;
-  const addFeedbackDiv = document.getElementById('addFeedback') as HTMLElement;
-  // @ts-ignore - bootstrap globally available via CDN
-  const addMovieModal = new bootstrap.Modal(document.getElementById('addMovieModal')); // Initialize modal instance
-  const addMovieForm = document.getElementById('addMovieForm') as HTMLFormElement;
-  const saveMovieButton = document.getElementById('saveMovieButton') as HTMLButtonElement;
-  const saveSpinner = document.getElementById('saveSpinner') as HTMLElement;
+  interface GoogleScriptRun {
+    withSuccessHandler(handler: Function): GoogleScriptRun;
+    withFailureHandler(handler: (error: Error) => void): GoogleScriptRun;
+    getMovies(): void;
+    searchTmdb(query: string): void;
+    getTmdbDetails(tmdbId: number): void;
+    addMovie(movieData: MovieDetails): void;
+  }
+
+  declare const google: {
+    script: {
+      run: GoogleScriptRun;
+    };
+  };
+
+  declare const bootstrap: any; // global bootstrap variable
+
+  // --- DOM Elements ---
+  const getById = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  const searchInput = getById<HTMLInputElement>('searchInput');
+  const searchButton = getById<HTMLButtonElement>('searchButton');
+  const searchSpinner = getById<HTMLElement>('searchSpinner');
+  const searchResultsDiv = getById<HTMLElement>('searchResults');
+  const searchErrorDiv = getById<HTMLElement>('searchError');
+  const movieListLoadingDiv = getById<HTMLElement>('movieListLoading');
+  const movieListErrorDiv = getById<HTMLElement>('movieListError');
+  const movieTableBody = getById<HTMLElement>('movieTableBody');
+  const addFeedbackDiv = getById<HTMLElement>('addFeedback');
+  const saveMovieButton = getById<HTMLButtonElement>('saveMovieButton');
+  const saveSpinner = getById<HTMLElement>('saveSpinner');
+  
+  // Modal instance
+  const addMovieModal = new bootstrap.Modal(document.getElementById('addMovieModal'));
 
   // --- Interfaces ---
+  // Must match Code.ts definitions exactly to avoid confusion, though scoped locally now.
   interface Movie {
       I_Url?: string;
       I?: string;
@@ -36,7 +57,7 @@
       title: string;
       overview: string;
       year: string;
-      poster_path: string;
+      poster_path?: string; // Optional
   }
 
   interface MovieDetails {
@@ -62,126 +83,94 @@
 
   // --- Event Listeners ---
 
-  // Load movies when the page loads
   document.addEventListener('DOMContentLoaded', loadMovies);
-  
-  // Modal Save button click
   saveMovieButton.addEventListener('click', handleSaveMovie);
-
-  // Search button click
   searchButton.addEventListener('click', handleSearch);
 
-  // Search input Enter key press
-  searchInput.addEventListener('keypress', function(event: KeyboardEvent) {
+  searchInput.addEventListener('keypress', (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
-      event.preventDefault(); // Prevent form submission if it were in a form
+      event.preventDefault(); 
       handleSearch();
     }
   });
 
-  // Add movie button click (using event delegation)
-  searchResultsDiv.addEventListener('click', function(event: MouseEvent) {
+  // Event delegation for "Add to list" buttons
+  searchResultsDiv.addEventListener('click', (event: MouseEvent) => {
     const target = event.target as HTMLElement;
-    // Check if clicked element is button or inside button
     const button = target.closest('.btn-add-movie') as HTMLButtonElement | null;
-    if (button) {
-      const tmdbIdStr = button.dataset.tmdbId;
-      if (tmdbIdStr) {
-          const tmdbId = parseInt(tmdbIdStr, 10);
-            button.disabled = true; // Prevent double clicks
-            button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ajout...`;
-            handleAddMovie(tmdbId, button);
-      }
+    if (button && button.dataset.tmdbId) {
+       const tmdbId = parseInt(button.dataset.tmdbId, 10);
+       button.disabled = true; 
+       button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ajout...`;
+       handleAddMovie(tmdbId, button);
     }
   });
 
 
-  // --- Functions ---
+  // --- UI Helper Functions ---
 
-  /**
-   * Shows a loading indicator.
-   * @param {HTMLElement} spinnerElement - The spinner element to show.
-   * @param {HTMLElement} buttonElement - Optional button to disable.
-   */
-  function showLoading(spinnerElement: HTMLElement, buttonElement: HTMLButtonElement | null = null) {
-      spinnerElement.classList.remove('d-none');
-      if (buttonElement) buttonElement.disabled = true;
-      clearFeedback(); // Clear previous feedback messages
-      searchErrorDiv.classList.add('d-none'); // Hide search errors
+  function showLoading(spinner: HTMLElement, button?: HTMLButtonElement | null) {
+      spinner.classList.remove('d-none');
+      if (button) button.disabled = true;
+      clearFeedback();
+      searchErrorDiv.classList.add('d-none');
   }
 
-  /**
-   * Hides a loading indicator.
-   * @param {HTMLElement} spinnerElement - The spinner element to hide.
-   * @param {HTMLElement} buttonElement - Optional button to re-enable.
-   */
-  function hideLoading(spinnerElement: HTMLElement, buttonElement: HTMLButtonElement | null = null) {
-      spinnerElement.classList.add('d-none');
-      if (buttonElement) buttonElement.disabled = false;
+  function hideLoading(spinner: HTMLElement, button?: HTMLButtonElement | null) {
+      spinner.classList.add('d-none');
+      if (button) button.disabled = false;
   }
 
-  /**
-   * Displays an error message.
-   * @param {string} message - The error message to display.
-   * @param {HTMLElement} errorElement - The element where the error should be shown.
-   */
-  function showError(message: string, errorElement: HTMLElement) {
-      errorElement.textContent = message;
-      errorElement.classList.remove('d-none');
-      console.error(message); // Also log to console
+  function showError(message: string, element: HTMLElement) {
+      element.textContent = message;
+      element.classList.remove('d-none');
+      console.error(message);
   }
 
-  /** Displays feedback message (success or error) after adding movie */
   function showFeedback(message: string, isSuccess: boolean = true) {
       addFeedbackDiv.textContent = message;
-      addFeedbackDiv.className = `alert ${isSuccess ? 'alert-success' : 'alert-danger'}`; // Reset classes and set new ones
+      addFeedbackDiv.className = `alert ${isSuccess ? 'alert-success' : 'alert-danger'}`;
       addFeedbackDiv.classList.remove('d-none');
   }
 
-  /** Clears the feedback message area */
   function clearFeedback() {
       addFeedbackDiv.classList.add('d-none');
       addFeedbackDiv.textContent = '';
-      addFeedbackDiv.className = 'alert d-none'; // Reset classes
+      addFeedbackDiv.className = 'alert d-none';
   }
 
+  // --- Logic Functions ---
 
-  /** Fetch and display movies from the Google Sheet */
   function loadMovies() {
     movieListLoadingDiv.classList.remove('d-none');
     movieListErrorDiv.classList.add('d-none');
-    movieTableBody.innerHTML = ''; // Clear existing table
+    movieTableBody.innerHTML = ''; 
     clearFeedback();
 
     google.script.run
       .withSuccessHandler(displayMovies)
       .withFailureHandler((error: Error) => {
-          showError("Erreur lors du chargement des films depuis Google Sheets: " + error.message, movieListErrorDiv);
+          showError("Erreur lors du chargement des films: " + error.message, movieListErrorDiv);
           movieListLoadingDiv.classList.add('d-none');
       })
       .getMovies();
   }
 
-  /**
-   * Callback function to display movies in the table.
-   * @param {Array<Object>} movies - Array of movie objects from the server.
-   */
   function displayMovies(movies: Movie[]) {
     movieListLoadingDiv.classList.add('d-none');
     if (!movies || movies.length === 0) {
-      movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center fst-italic">Aucun film trouvé dans la liste. Ajoutez-en un !</td></tr>';
+      movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center fst-italic">Aucun film trouvé. Ajoutez-en un !</td></tr>';
       return;
     }
 
-    let tableHtml = '';
-    movies.forEach(movie => {
-        // Use the parsed URL if available, otherwise the raw text
+    movieTableBody.innerHTML = movies.map(movie => {
         const imageUrl = movie.I_Url || '#';
-        const imageText = movie.I || 'I'; // Default text 'I'
-        const trailerUrl = movie.T_Url || '#'; // Use IMDb link from T_Url
-        const trailerText = movie.T || 'T'; // Default text 'T'
+        const imageText = movie.I || 'I';
+        const trailerUrl = movie.T_Url || '#';
+        const trailerText = movie.T || 'T';
+        const statusClass = movie.STATUS === 'Vu' ? 'success' : 'warning';
 
-        tableHtml += `
+        return `
           <tr>
             <td>${movie.DATE || ''}</td>
             <td class="text-center">
@@ -194,15 +183,12 @@
             <td>${movie.YEAR || ''}</td>
             <td>${movie.REALISATEUR || ''}</td>
             <td>${movie.ACTEURS || ''}</td>
-            <td><span class="badge bg-${movie.STATUS === 'Vu' ? 'success' : 'warning'}">${movie.STATUS || ''}</span></td>
-            <!-- Add more columns here if needed -->
+            <td><span class="badge bg-${statusClass}">${movie.STATUS || ''}</span></td>
           </tr>
         `;
-    });
-    movieTableBody.innerHTML = tableHtml;
+    }).join('');
   }
 
-  /** Handles the movie search process */
   function handleSearch() {
     const query = searchInput.value.trim();
     if (!query) {
@@ -211,8 +197,8 @@
     }
 
     showLoading(searchSpinner, searchButton);
-    searchResultsDiv.innerHTML = ''; // Clear previous results
-    searchErrorDiv.classList.add('d-none'); // Hide previous errors
+    searchResultsDiv.innerHTML = '';
+    searchErrorDiv.classList.add('d-none');
     clearFeedback();
 
     google.script.run
@@ -224,10 +210,6 @@
       .searchTmdb(query);
   }
 
-  /**
-   * Displays search results from TMDB.
-   * @param {Array<Object>} results - Array of movie result objects.
-   */
   function displaySearchResults(results: TmdbResult[]) {
       hideLoading(searchSpinner, searchButton);
       if (!results || results.length === 0) {
@@ -235,131 +217,134 @@
           return;
       }
 
-      let resultsHtml = '';
-      results.forEach(movie => {
-          // Basic sanitization (replace quotes to prevent HTML injection if used directly, though template literals are generally safe)
-          const safeTitle = movie.title.replace(/"/g, '"');
-          const safeOverview = movie.overview ? movie.overview.replace(/"/g, '"') : 'Pas de description disponible.';
+      searchResultsDiv.innerHTML = results.map(movie => {
+          // Basic sanitization
+          const safeTitle = movie.title.replace(/"/g, '&quot;');
+          const safeOverview = movie.overview ? movie.overview.replace(/"/g, '&quot;') : 'Pas de description.';
 
-          resultsHtml += `
+          return `
               <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                   <div class="card h-100 shadow-sm">
                       <img src="${movie.poster_path}" class="card-img-top" alt="Affiche de ${safeTitle}">
                       <div class="card-body d-flex flex-column">
                           <h5 class="card-title">${safeTitle} (${movie.year})</h5>
-                          <p class="card-text flex-grow-1">${safeOverview}</p>
+                          <p class="card-text flex-grow-1 small">${safeOverview}</p>
                           <button class="btn btn-sm btn-success btn-add-movie mt-auto" data-tmdb-id="${movie.id}">
-                             <i class="fas fa-plus me-1"></i> Ajouter à ma liste
+                             <i class="fas fa-plus me-1"></i> Ajouter
                           </button>
                       </div>
                   </div>
               </div>
           `;
-      });
-      searchResultsDiv.innerHTML = resultsHtml;
+      }).join('');
   }
 
-  function populateAndShowModal(movieDetails: MovieDetails) {
-      // --- Populate Display Fields (mostly read-only in modal) ---
-      (document.getElementById('modalPoster') as HTMLImageElement).src = movieDetails.posterUrl || 'https://via.placeholder.com/200x300.png?text=Affiche';
-      document.getElementById('modalTitleYear')!.textContent = `${movieDetails.title || 'Inconnu'} (${movieDetails.year || 'N/A'})`;
-      document.getElementById('modalDirector')!.textContent = `Réalisateur: ${movieDetails.director || 'N/A'}`;
-      document.getElementById('modalActors')!.textContent = `Acteurs: ${movieDetails.actors || 'N/A'}`;
-      document.getElementById('modalGenres')!.textContent = `Genres: ${movieDetails.genres || 'N/A'}`;
-      document.getElementById('modalDuration')!.textContent = `Durée: ${movieDetails.duration || 'N/A'}`;
-      (document.getElementById('modalPlot') as HTMLTextAreaElement).value = movieDetails.plot || ''; // Textarea
+  function populateAndShowModal(details: MovieDetails) {
+      const setVal = (id: string, val: string) => { 
+          const el = getById<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(id);
+          if(el) el.value = val || ''; 
+      };
+      
+      const setCheck = (id: string, checked: boolean) => {
+          const el = getById<HTMLInputElement>(id);
+          if(el) el.checked = checked;
+      };
 
-      // --- Populate Editable Fields with Defaults/Fetched Data ---
-      (document.getElementById('modalDate') as HTMLInputElement).value = movieDetails.dateAdded || new Date().toLocaleDateString('en-US'); // Default to today
-      (document.getElementById('modalStatus') as HTMLSelectElement).value = movieDetails.status || 'Vu'; // Default status
-      (document.getElementById('modalSuiteCheck') as HTMLInputElement).checked = (String(movieDetails.suite).toUpperCase() === 'TRUE');
-      (document.getElementById('modalNote') as HTMLInputElement).value = movieDetails.note || ''; // Default empty
-      (document.getElementById('modalRemarques') as HTMLTextAreaElement).value = movieDetails.remarques || ''; // Default empty
+      const setText = (id: string, text: string) => {
+          const el = getById(id);
+          if(el) el.textContent = text;
+      };
 
-      // --- Populate Hidden Fields (to pass data not directly edited in modal) ---
-      (document.getElementById('modalImdbLink') as HTMLInputElement).value = movieDetails.imdbLink || '';
-      (document.getElementById('modalTrailerLink') as HTMLInputElement).value = movieDetails.trailerLink || '';
-      (document.getElementById('modalPosterUrl') as HTMLInputElement).value = movieDetails.posterUrl || '';
-      (document.getElementById('modalImdbScore') as HTMLInputElement).value = movieDetails.imdbScore || '';
-      (document.getElementById('modalRtScore') as HTMLInputElement).value = movieDetails.rtScore || '';
-      // Store core data again in hidden fields to reconstruct the object on save
-      (document.getElementById('modalTitle') as HTMLInputElement).value = movieDetails.title || '';
-      (document.getElementById('modalYear') as HTMLInputElement).value = movieDetails.year || '';
-      (document.getElementById('modalDirectorHidden') as HTMLInputElement).value = movieDetails.director || '';
-      (document.getElementById('modalActorsHidden') as HTMLInputElement).value = movieDetails.actors || '';
-      (document.getElementById('modalGenresHidden') as HTMLInputElement).value = movieDetails.genres || '';
-      (document.getElementById('modalDurationHidden') as HTMLInputElement).value = movieDetails.duration || '';
-      (document.getElementById('modalPlotHidden') as HTMLInputElement).value = movieDetails.plot || '';
-      (document.getElementById('modalImdbScore') as HTMLInputElement).value = movieDetails.imdbScore || '';
-      (document.getElementById('modalRtScore') as HTMLInputElement).value = movieDetails.rtScore || '';
+      // Display fields
+      const posterImg = getById<HTMLImageElement>('modalPoster');
+      if(posterImg) posterImg.src = details.posterUrl || 'https://via.placeholder.com/200x300.png?text=Affiche';
+      
+      setText('modalTitleYear', `${details.title || 'Inconnu'} (${details.year || 'N/A'})`);
+      setText('modalDirector', `Réalisateur: ${details.director || 'N/A'}`);
+      setText('modalActors', `Acteurs: ${details.actors || 'N/A'}`);
+      setText('modalGenres', `Genres: ${details.genres || 'N/A'}`);
+      setText('modalDuration', `Durée: ${details.duration || 'N/A'}`);
+      setVal('modalPlot', details.plot || '');
 
+      // Input fields
+      setVal('modalDate', details.dateAdded || new Date().toLocaleDateString('en-US'));
+      setVal('modalStatus', details.status || 'Vu');
+      setCheck('modalSuiteCheck', String(details.suite).toUpperCase() === 'TRUE');
+      setVal('modalNote', details.note || '');
+      setVal('modalRemarques', details.remarques || '');
 
-      // --- Show the Modal ---
+      // Hidden fields
+      setVal('modalTitle', details.title || '');
+      setVal('modalYear', details.year || '');
+      setVal('modalDirectorHidden', details.director || '');
+      setVal('modalActorsHidden', details.actors || '');
+      setVal('modalGenresHidden', details.genres || '');
+      setVal('modalDurationHidden', details.duration || '');
+      setVal('modalPlotHidden', details.plot || '');
+      setVal('modalImdbLink', details.imdbLink || '');
+      setVal('modalTrailerLink', details.trailerLink || '');
+      setVal('modalPosterUrl', details.posterUrl || '');
+      setVal('modalImdbScore', details.imdbScore || '');
+      setVal('modalRtScore', details.rtScore || '');
+
       addMovieModal.show();
   }
 
 
   function handleSaveMovie() {
-    showLoading(saveSpinner, saveMovieButton); // Show spinner on save button
+    showLoading(saveSpinner, saveMovieButton); 
     clearFeedback();
 
-    // Construct the movieData object FROM THE MODAL fields
-    const movieData: MovieDetails = {
-        // Editable fields
-        dateAdded: (document.getElementById('modalDate') as HTMLInputElement).value,
-        status: (document.getElementById('modalStatus') as HTMLSelectElement).value,
-        suite: (document.getElementById('modalSuiteCheck') as HTMLInputElement).checked ? 'TRUE' : 'FALSE',
-        note: (document.getElementById('modalNote') as HTMLInputElement).value,
-        remarques: (document.getElementById('modalRemarques') as HTMLTextAreaElement).value,
+    const getVal = (id: string) => getById<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(id).value;
+    const getCheck = (id: string) => getById<HTMLInputElement>(id).checked;
 
-        // Fields read from hidden inputs (originally from TMDB)
-        title: (document.getElementById('modalTitle') as HTMLInputElement).value,
-        year: (document.getElementById('modalYear') as HTMLInputElement).value,
-        director: (document.getElementById('modalDirectorHidden') as HTMLInputElement).value,
-        actors: (document.getElementById('modalActorsHidden') as HTMLInputElement).value,
-        genres: (document.getElementById('modalGenresHidden') as HTMLInputElement).value,
-        duration: (document.getElementById('modalDurationHidden') as HTMLInputElement).value,
-        plot: (document.getElementById('modalPlotHidden') as HTMLInputElement).value, 
-        imdbLink: (document.getElementById('modalImdbLink') as HTMLInputElement).value,
-        trailerLink: (document.getElementById('modalTrailerLink') as HTMLInputElement).value,
-        posterUrl: (document.getElementById('modalPosterUrl') as HTMLInputElement).value,
-        imdbScore: (document.getElementById('modalImdbScore') as HTMLInputElement).value, 
-        rtScore: (document.getElementById('modalRtScore') as HTMLInputElement).value      
+    const movieData: MovieDetails = {
+        dateAdded: getVal('modalDate'),
+        status: getVal('modalStatus'),
+        suite: getCheck('modalSuiteCheck') ? 'TRUE' : 'FALSE',
+        note: getVal('modalNote'),
+        remarques: getVal('modalRemarques'),
+        title: getVal('modalTitle'),
+        year: getVal('modalYear'),
+        director: getVal('modalDirectorHidden'),
+        actors: getVal('modalActorsHidden'),
+        genres: getVal('modalGenresHidden'),
+        duration: getVal('modalDurationHidden'),
+        plot: getVal('modalPlotHidden'), 
+        imdbLink: getVal('modalImdbLink'),
+        trailerLink: getVal('modalTrailerLink'),
+        posterUrl: getVal('modalPosterUrl'),
+        imdbScore: getVal('modalImdbScore'), 
+        rtScore: getVal('modalRtScore')      
     };
 
     google.script.run
         .withSuccessHandler((response: string) => {
             hideLoading(saveSpinner, saveMovieButton);
-            addMovieModal.hide(); // Hide the modal on success
-            showFeedback(response, true); // Show success message from addMovie
-            loadMovies(); // Refresh the main movie list
+            addMovieModal.hide(); 
+            showFeedback(response, true); 
+            loadMovies(); 
         })
         .withFailureHandler((error: Error) => {
             hideLoading(saveSpinner, saveMovieButton);
-            // Display error *inside* the modal or using the main feedback area
             showFeedback("Erreur lors de l'enregistrement: " + error.message, false);
-            // Don't hide the modal on error, so the user can retry or cancel
         })
-        .addMovie(movieData); // Call addMovie with the data gathered from the modal
+        .addMovie(movieData); 
   }
 
   function handleAddMovie(tmdbId: number, buttonElement: HTMLButtonElement) {
     clearFeedback();
-    buttonElement.disabled = true; // Disable button while fetching
-    buttonElement.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...`;
-
+    
     google.script.run
         .withSuccessHandler((movieDetails: MovieDetails) => {
-            populateAndShowModal(movieDetails); // New function call
-            // Reset button state after modal is ready to show
+            populateAndShowModal(movieDetails); 
             buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter à ma liste';
+            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter';
         })
         .withFailureHandler((detailsError: Error) => {
-            showFeedback("Erreur lors de la récupération des détails du film: " + detailsError.message, false);
-            // Re-enable button on failure
+            showFeedback("Erreur lors de la récupération des détails: " + detailsError.message, false);
             buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter à ma liste';
+            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter';
         })
-        .getTmdbDetails(tmdbId); // Fetch details when button clicked
+        .getTmdbDetails(tmdbId); 
   }
