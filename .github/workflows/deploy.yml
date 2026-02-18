@@ -32,3 +32,6 @@ jobs:
 
       - name: Push to Apps Script
         run: npx @google/clasp push --force
+
+      - name: Deploy to Web App
+        run: npx @google/clasp deploy -i "AKfycby3YxzZAEoaKfJgb2TOSYJs9IZQDxdNp8SibUwIav-JxU-CURs0J2322FQV6NhWmcXP" -d "Auto-deploy from GitHub Actions"
