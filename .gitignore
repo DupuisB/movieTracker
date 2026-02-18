@@ -17,3 +17,7 @@ index.html
 
 # Local env
 .env
+
+# Build artifacts
+Code.js
+build/

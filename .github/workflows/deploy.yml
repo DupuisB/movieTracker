@@ -21,8 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build frontend
         run: npm run build
+
+      - name: Transpile Code.ts for Apps Script
+        run: npx tsc -p tsconfig.gas.json && cp build/Code.js Code.js
 
       - name: Create .clasprc.json
         run: |

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "None",
+    "lib": ["ESNext"],
+    "outDir": "./build",
+    "strict": false,
+    "skipLibCheck": true,
+    "removeComments": false,
+    "declaration": false
+  },
+  "include": ["Code.ts"],
+  "exclude": ["src", "node_modules"]
+}
