@@ -25,9 +25,10 @@ jobs:
         run: npm run build
 
       - name: Create .clasprc.json
-        env:
-          CLASP_TOKEN: ${{ secrets.CLASP_TOKEN }}
-        run: echo "$CLASP_TOKEN" > ~/.clasprc.json
+        run: |
+          cat <<EOF > ~/.clasprc.json
+          ${{ secrets.CLASP_TOKEN }}
+          EOF
 
       - name: Push to Apps Script
         run: npx @google/clasp push --force
