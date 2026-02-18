@@ -30,4 +30,4 @@ jobs:
         run: echo "$CLASP_TOKEN" > ~/.clasprc.json
 
       - name: Push to Apps Script
-        run: npx clasp push --force
+        run: npx @google/clasp push --force
