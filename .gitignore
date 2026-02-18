@@ -11,8 +11,9 @@ npm-debug.log*
 .clasp.json  # Optional: keep if you want to share config, but remove if it contains sensitive scriptId (usually scriptId is public though)
 appsscript.json # This should be tracked as it defines project config
 
-# Build artifacts
+# Ignore index.html
 index.html
+!src/index.html
 
 # Local env
 .env
