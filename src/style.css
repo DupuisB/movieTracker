@@ -1,131 +1,553 @@
-/* --- Basic Body and Container Styling --- */
+/* === Design System === */
+:root {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-hover: #273548;
+  --bg-card: rgba(30, 41, 59, 0.85);
+  --bg-input: #1a2435;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --imdb-gold: #f5c518;
+  --rt-red: #fa320a;
+  --border: rgba(148, 163, 184, 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --transition: 0.2s ease;
+}
+
+/* === Reset & Base === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  background-color: #f8f9fa; /* Light grey background */
-  padding-top: 1rem; /* Add some space at the top */
-  padding-bottom: 1rem; /* Add some space at the bottom */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-.container {
-  max-width: 1200px; /* Limit max width for very large screens */
+/* === Layout === */
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
 }
 
-/* --- Card Styling --- */
-.card {
-  margin-bottom: 1.5rem; /* Consistent spacing between cards */
-  border: 1px solid rgba(0, 0, 0, 0.125); /* Default Bootstrap border */
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Default Bootstrap shadow */
+.app-header {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
 }
 
-.card-header {
-  font-weight: 500; /* Slightly less bold than default maybe */
-  background-color: rgba(0, 0, 0, 0.03); /* Standard light card header */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+.app-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.card-header.bg-primary {
-  background-color: #0d6efd !important; /* Ensure Bootstrap primary color overrides */
-  color: white;
-}
-.card-header.bg-success {
-  background-color: #198754 !important; /* Ensure Bootstrap success color overrides */
-  color: white;
+.app-header h1 span {
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* --- Search Results Card Specifics --- */
-#searchResults .card {
-  transition:
-    transform 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out;
-  height: 100%; /* Make cards in a row equal height using Bootstrap's grid */
+/* === Search Section === */
+.search-section {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
-#searchResults .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-#searchResults .card-img-top {
-  width: 100%;
-  height: 280px; /* Slightly taller poster image */
-  object-fit: cover; /* Scale the image nicely */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.125); /* Add border below image */
-}
-
-#searchResults .card-body {
+.search-bar {
   display: flex;
-  flex-direction: column; /* Arrange items vertically */
-  justify-content: space-between; /* Push button to bottom */
-  padding: 1rem; /* Standard padding */
+  gap: 0.5rem;
 }
 
-#searchResults .card-title {
-  font-size: 1rem;
-  font-weight: bold;
+.search-bar input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.search-bar input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-bar input:focus {
+  border-color: var(--accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-accent:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-accent:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.btn-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* === Alerts === */
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.alert-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.alert-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* === Search Results Grid === */
+.search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.search-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: all var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.search-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent);
+}
+
+.search-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.search-card-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.search-card-body h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
+}
+
+.search-card-body p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
   margin-bottom: 0.5rem;
 }
 
-#searchResults .card-text {
-  font-size: 0.88rem;
-  color: #6c757d; /* Secondary text color */
-  flex-grow: 1; /* Allow text to take up available space */
-  overflow: hidden; /* Prevent overflow */
-  text-overflow: ellipsis; /* Add ellipsis for long text */
-  /* Limit description to a few lines (using webkit prefix for broader compatibility) */
-  display: -webkit-box;
-  -webkit-line-clamp: 4; /* Limit to 4 lines */
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-  margin-bottom: 1rem; /* Space before button */
+/* === Movie List Section === */
+.movies-section {
+  margin-top: 0.5rem;
 }
 
-#searchResults .btn-add-movie {
-  width: 100%; /* Make button full width */
-  margin-top: auto; /* Ensure it stays at the bottom */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-/* --- Movie List Table Styling --- */
-.table {
-  margin-bottom: 0; /* Remove default table margin if inside a card */
+.section-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-#movieTableBody img {
-  max-width: 45px; /* Slightly larger image in table */
-  height: auto;
-  vertical-align: middle; /* Align image nicely */
-  border-radius: 3px; /* Slightly rounded corners */
+.movie-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
 }
 
-#movieTableBody .badge {
-  font-size: 0.9em; /* Slightly larger badge text */
-  padding: 0.4em 0.6em; /* Adjust badge padding */
+/* === Movie Cards === */
+.movie-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-/* Center text in specific table columns if desired */
-#movieTableBody td:nth-child(2), /* Poster column */
-  #movieTableBody td:nth-child(3) {
-  /* IMDb/Trailer column */
+.movie-card {
+  display: flex;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  transition: all var(--transition);
+  text-decoration: none;
+  color: inherit;
+}
+
+.movie-card:hover {
+  background: var(--bg-surface-hover);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.movie-poster {
+  width: 56px;
+  height: 84px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+
+.movie-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.movie-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.movie-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-year {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.movie-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* === Badges & Pills === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.badge-status {
+  color: white;
+}
+
+.badge-vu {
+  background: var(--success);
+}
+
+.badge-a-voir {
+  background: var(--warning);
+  color: #1a1a1a;
+}
+
+.badge-abandonne {
+  background: var(--text-muted);
+}
+
+.badge-imdb {
+  background: var(--imdb-gold);
+  color: #1a1a1a;
+}
+
+.badge-rt {
+  background: var(--rt-red);
+  color: white;
+}
+
+.badge-note {
+  background: var(--accent);
+  color: white;
+}
+
+.movie-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.movie-actions a {
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: color var(--transition);
+}
+
+.movie-actions a:hover {
+  color: var(--accent);
+}
+
+/* === Loading & Empty States === */
+.loading-state,
+.empty-state {
   text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
 }
 
-#movieTableBody td {
-  vertical-align: middle; /* Vertically center all cell content */
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
-/* --- Icons --- */
-.fa-clapperboard {
-  color: #e6b91e; /* Use a gold/yellow color for IMDb icon */
-  font-size: 1.2em; /* Slightly larger icon */
+.spinner-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
 }
 
-/* --- Utility --- */
-.text-center {
-  text-align: center !important; /* Ensure helper class works */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.mt-auto {
-  margin-top: auto !important; /* Ensure helper class works */
+/* === Modal Overrides (Bootstrap) === */
+.modal-content {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-.shadow-sm {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+.modal-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border);
+}
+
+.modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.form-control, .form-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+}
+
+.form-control:focus, .form-select:focus {
+  background: var(--bg-input);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.form-check-input {
+  background-color: var(--bg-input);
+  border-color: var(--border);
+}
+
+.form-check-input:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.form-check-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Modal poster */
+#modalPoster {
+  border-radius: var(--radius-sm);
+  max-width: 180px;
+}
+
+/* === Utility === */
+.d-none { display: none !important; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-secondary); }
+
+/* === Responsive === */
+@media (max-width: 640px) {
+  .app-container {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .search-results {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .search-card img {
+    height: 170px;
+  }
+
+  .movie-poster {
+    width: 48px;
+    height: 72px;
+  }
+
+  .movie-title {
+    font-size: 0.88rem;
+  }
+
+  .movie-meta {
+    font-size: 0.72rem;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .app-container {
+    padding: 1.5rem 2rem 3rem;
+  }
+
+  .app-header {
+    padding: 2rem 0 1.5rem;
+  }
+
+  .search-results {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
 }

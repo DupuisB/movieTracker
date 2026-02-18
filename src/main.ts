@@ -1,5 +1,5 @@
-  // --- Global Declaration for Google Apps Script ---
-  export {}; // Make this file a module to avoid global scope collisions with Code.ts
+  // --- Module Declaration ---
+  export {};
 
   interface GoogleScriptRun {
     withSuccessHandler(handler: Function): GoogleScriptRun;
@@ -11,33 +11,12 @@
   }
 
   declare const google: {
-    script: {
-      run: GoogleScriptRun;
-    };
+    script: { run: GoogleScriptRun; };
   };
 
-  declare const bootstrap: any; // global bootstrap variable
-
-  // --- DOM Elements ---
-  const getById = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-
-  const searchInput = getById<HTMLInputElement>('searchInput');
-  const searchButton = getById<HTMLButtonElement>('searchButton');
-  const searchSpinner = getById<HTMLElement>('searchSpinner');
-  const searchResultsDiv = getById<HTMLElement>('searchResults');
-  const searchErrorDiv = getById<HTMLElement>('searchError');
-  const movieListLoadingDiv = getById<HTMLElement>('movieListLoading');
-  const movieListErrorDiv = getById<HTMLElement>('movieListError');
-  const movieTableBody = getById<HTMLElement>('movieTableBody');
-  const addFeedbackDiv = getById<HTMLElement>('addFeedback');
-  const saveMovieButton = getById<HTMLButtonElement>('saveMovieButton');
-  const saveSpinner = getById<HTMLElement>('saveSpinner');
-  
-  // Modal instance
-  const addMovieModal = new bootstrap.Modal(document.getElementById('addMovieModal'));
+  declare const bootstrap: any;
 
   // --- Interfaces ---
-  // Must match Code.ts definitions exactly to avoid confusion, though scoped locally now.
   interface Movie {
       I_Url?: string;
       I?: string;
@@ -49,6 +28,11 @@
       REALISATEUR?: string;
       ACTEURS?: string;
       STATUS?: string;
+      IMDB?: string;
+      RT?: string;
+      NOTE?: string;
+      GENRES?: string;
+      PLOT?: string;
       [key: string]: any;
   }
 
@@ -57,7 +41,7 @@
       title: string;
       overview: string;
       year: string;
-      poster_path?: string; // Optional
+      poster_path?: string;
   }
 
   interface MovieDetails {
@@ -80,121 +64,168 @@
       rtScore?: string;
   }
 
+  // --- DOM ---
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-  // --- Event Listeners ---
+  const searchInput = $<HTMLInputElement>('searchInput');
+  const searchButton = $<HTMLButtonElement>('searchButton');
+  const searchSpinner = $('searchSpinner');
+  const searchIcon = $('searchIcon');
+  const searchResultsDiv = $('searchResults');
+  const searchErrorDiv = $('searchError');
+  const movieListLoadingDiv = $('movieListLoading');
+  const movieListErrorDiv = $('movieListError');
+  const movieGrid = $('movieGrid');
+  const movieCountEl = $('movieCount');
+  const addFeedbackDiv = $('addFeedback');
+  const saveMovieButton = $<HTMLButtonElement>('saveMovieButton');
+  const saveSpinner = $('saveSpinner');
+  const addMovieModal = new bootstrap.Modal(document.getElementById('addMovieModal'));
 
+  // --- Events ---
   document.addEventListener('DOMContentLoaded', loadMovies);
   saveMovieButton.addEventListener('click', handleSaveMovie);
   searchButton.addEventListener('click', handleSearch);
 
-  searchInput.addEventListener('keypress', (event: KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault(); 
-      handleSearch();
+  searchInput.addEventListener('keypress', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleSearch(); }
+  });
+
+  searchResultsDiv.addEventListener('click', (e: MouseEvent) => {
+    const btn = (e.target as HTMLElement).closest('.btn-add-movie') as HTMLButtonElement | null;
+    if (btn?.dataset.tmdbId) {
+      const tmdbId = parseInt(btn.dataset.tmdbId, 10);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner spinner-sm"></span>';
+      handleAddMovie(tmdbId, btn);
     }
   });
 
-  // Event delegation for "Add to list" buttons
-  searchResultsDiv.addEventListener('click', (event: MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const button = target.closest('.btn-add-movie') as HTMLButtonElement | null;
-    if (button && button.dataset.tmdbId) {
-       const tmdbId = parseInt(button.dataset.tmdbId, 10);
-       button.disabled = true; 
-       button.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ajout...`;
-       handleAddMovie(tmdbId, button);
-    }
-  });
-
-
-  // --- UI Helper Functions ---
-
+  // --- Helpers ---
   function showLoading(spinner: HTMLElement, button?: HTMLButtonElement | null) {
-      spinner.classList.remove('d-none');
-      if (button) button.disabled = true;
-      clearFeedback();
-      searchErrorDiv.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    if (button) button.disabled = true;
+    if (spinner === searchSpinner) searchIcon.classList.add('d-none');
+    clearFeedback();
+    searchErrorDiv.classList.add('d-none');
   }
 
   function hideLoading(spinner: HTMLElement, button?: HTMLButtonElement | null) {
-      spinner.classList.add('d-none');
-      if (button) button.disabled = false;
+    spinner.classList.add('d-none');
+    if (button) button.disabled = false;
+    if (spinner === searchSpinner) searchIcon.classList.remove('d-none');
   }
 
-  function showError(message: string, element: HTMLElement) {
-      element.textContent = message;
-      element.classList.remove('d-none');
-      console.error(message);
+  function showError(msg: string, el: HTMLElement) {
+    el.textContent = msg;
+    el.classList.remove('d-none');
   }
 
-  function showFeedback(message: string, isSuccess: boolean = true) {
-      addFeedbackDiv.textContent = message;
-      addFeedbackDiv.className = `alert ${isSuccess ? 'alert-success' : 'alert-danger'}`;
-      addFeedbackDiv.classList.remove('d-none');
+  function showFeedback(msg: string, ok: boolean = true) {
+    addFeedbackDiv.textContent = msg;
+    addFeedbackDiv.className = `alert ${ok ? 'alert-success' : 'alert-danger'}`;
+    addFeedbackDiv.classList.remove('d-none');
+    if (ok) setTimeout(() => clearFeedback(), 4000);
   }
 
   function clearFeedback() {
-      addFeedbackDiv.classList.add('d-none');
-      addFeedbackDiv.textContent = '';
-      addFeedbackDiv.className = 'alert d-none';
+    addFeedbackDiv.classList.add('d-none');
+    addFeedbackDiv.textContent = '';
+    addFeedbackDiv.className = 'alert d-none';
   }
 
-  // --- Logic Functions ---
+  function escHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // --- Status badge helper ---
+  function statusBadge(status?: string): string {
+    if (!status) return '';
+    const s = status.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    if (s === 'vu') return '<span class="badge badge-status badge-vu">Vu</span>';
+    if (['a voir', 'à voir'].includes(status.trim())) return '<span class="badge badge-status badge-a-voir">À voir</span>';
+    if (s === 'abandonne') return '<span class="badge badge-status badge-abandonne">Abandonné</span>';
+    return `<span class="badge badge-status badge-abandonne">${escHtml(status)}</span>`;
+  }
+
+  // --- Score pills ---
+  function scorePills(movie: Movie): string {
+    let html = '';
+    if (movie.IMDB && String(movie.IMDB).trim() && String(movie.IMDB) !== 'N/A')
+      html += `<span class="badge badge-imdb">IMDb ${escHtml(String(movie.IMDB))}</span>`;
+    if (movie.RT && String(movie.RT).trim() && String(movie.RT) !== 'N/A')
+      html += `<span class="badge badge-rt">RT ${escHtml(String(movie.RT))}%</span>`;
+    if (movie.NOTE && String(movie.NOTE).trim())
+      html += `<span class="badge badge-note">${escHtml(String(movie.NOTE))}/20</span>`;
+    return html;
+  }
+
+  // --- Core Functions ---
 
   function loadMovies() {
     movieListLoadingDiv.classList.remove('d-none');
     movieListErrorDiv.classList.add('d-none');
-    movieTableBody.innerHTML = ''; 
+    movieGrid.innerHTML = '';
+    movieCountEl.textContent = '';
     clearFeedback();
 
     google.script.run
       .withSuccessHandler(displayMovies)
-      .withFailureHandler((error: Error) => {
-          showError("Erreur lors du chargement des films: " + error.message, movieListErrorDiv);
-          movieListLoadingDiv.classList.add('d-none');
+      .withFailureHandler((err: Error) => {
+        showError("Erreur de chargement: " + err.message, movieListErrorDiv);
+        movieListLoadingDiv.classList.add('d-none');
       })
       .getMovies();
   }
 
   function displayMovies(movies: Movie[]) {
     movieListLoadingDiv.classList.add('d-none');
+
     if (!movies || movies.length === 0) {
-      movieTableBody.innerHTML = '<tr><td colspan="8" class="text-center fst-italic">Aucun film trouvé. Ajoutez-en un !</td></tr>';
+      movieGrid.innerHTML = '<div class="empty-state"><p>Aucun film dans la liste.<br>Recherchez un film ci-dessus pour commencer !</p></div>';
+      movieCountEl.textContent = '0 films';
       return;
     }
 
-    movieTableBody.innerHTML = movies.map(movie => {
-        const imageUrl = movie.I_Url || '#';
-        const imageText = movie.I || 'I';
-        const trailerUrl = movie.T_Url || '#';
-        const trailerText = movie.T || 'T';
-        const statusClass = movie.STATUS === 'Vu' ? 'success' : 'warning';
+    movieCountEl.textContent = `${movies.length} film${movies.length > 1 ? 's' : ''}`;
 
-        return `
-          <tr>
-            <td>${movie.DATE || ''}</td>
-            <td class="text-center">
-                ${movie.I_Url ? `<a href="${imageUrl}" target="_blank" title="Voir l'affiche"><img src="${imageUrl}" alt="Affiche" style="max-width: 40px; height: auto;"></a>` : imageText}
-             </td>
-            <td class="text-center">
-                ${movie.T_Url ? `<a href="${trailerUrl}" target="_blank" title="Voir sur IMDb/Trailer"><i class="fa-solid fa-clapperboard fa-lg"></i></a>` : trailerText}
-             </td>
-            <td>${movie['TITRE FILM'] || 'N/A'}</td>
-            <td>${movie.YEAR || ''}</td>
-            <td>${movie.REALISATEUR || ''}</td>
-            <td>${movie.ACTEURS || ''}</td>
-            <td><span class="badge bg-${statusClass}">${movie.STATUS || ''}</span></td>
-          </tr>
-        `;
+    movieGrid.innerHTML = movies.map(movie => {
+      const posterUrl = movie.I_Url || '';
+      const posterImg = posterUrl
+        ? `<img src="${posterUrl}" alt="" class="movie-poster" loading="lazy">`
+        : '<div class="movie-poster" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem">🎬</div>';
+
+      const title = escHtml(movie['TITRE FILM'] || 'Sans titre');
+      const year = movie.YEAR ? escHtml(String(movie.YEAR)) : '';
+      const director = movie.REALISATEUR ? escHtml(String(movie.REALISATEUR)) : '';
+
+      const actions: string[] = [];
+      if (movie.T_Url) actions.push(`<a href="${movie.T_Url}" target="_blank" title="Trailer / IMDb"><i class="fa-solid fa-clapperboard"></i></a>`);
+      if (movie.I_Url) actions.push(`<a href="${movie.I_Url}" target="_blank" title="Affiche"><i class="fa-solid fa-image"></i></a>`);
+
+      return `
+        <div class="movie-card">
+          ${posterImg}
+          <div class="movie-info">
+            <div class="movie-title-row">
+              <span class="movie-title">${title}</span>
+              <span class="movie-year">${year}</span>
+            </div>
+            ${director ? `<div class="movie-meta">${director}</div>` : ''}
+            <div class="movie-tags">
+              ${statusBadge(movie.STATUS)}
+              ${scorePills(movie)}
+            </div>
+          </div>
+          ${actions.length ? `<div class="movie-actions">${actions.join('')}</div>` : ''}
+        </div>
+      `;
     }).join('');
   }
 
   function handleSearch() {
     const query = searchInput.value.trim();
-    if (!query) {
-      showError("Veuillez entrer un terme de recherche.", searchErrorDiv);
-      return;
-    }
+    if (!query) { showError("Veuillez entrer un terme de recherche.", searchErrorDiv); return; }
 
     showLoading(searchSpinner, searchButton);
     searchResultsDiv.innerHTML = '';
@@ -203,148 +234,124 @@
 
     google.script.run
       .withSuccessHandler(displaySearchResults)
-      .withFailureHandler((error: Error) => {
-        showError("Erreur lors de la recherche TMDB: " + error.message, searchErrorDiv);
+      .withFailureHandler((err: Error) => {
+        showError("Erreur TMDB: " + err.message, searchErrorDiv);
         hideLoading(searchSpinner, searchButton);
       })
       .searchTmdb(query);
   }
 
   function displaySearchResults(results: TmdbResult[]) {
-      hideLoading(searchSpinner, searchButton);
-      if (!results || results.length === 0) {
-          searchResultsDiv.innerHTML = '<p class="text-center fst-italic col-12">Aucun résultat trouvé.</p>';
-          return;
-      }
+    hideLoading(searchSpinner, searchButton);
+    if (!results || results.length === 0) {
+      searchResultsDiv.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted)">Aucun résultat.</p>';
+      return;
+    }
 
-      searchResultsDiv.innerHTML = results.map(movie => {
-          // Basic sanitization
-          const safeTitle = movie.title.replace(/"/g, '&quot;');
-          const safeOverview = movie.overview ? movie.overview.replace(/"/g, '&quot;') : 'Pas de description.';
+    searchResultsDiv.innerHTML = results.map(movie => {
+      const safeTitle = escHtml(movie.title);
+      const safeOverview = movie.overview ? escHtml(movie.overview) : 'Pas de description.';
+      const poster = movie.poster_path || 'https://via.placeholder.com/200x300.png?text=No+Image';
 
-          return `
-              <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                  <div class="card h-100 shadow-sm">
-                      <img src="${movie.poster_path}" class="card-img-top" alt="Affiche de ${safeTitle}">
-                      <div class="card-body d-flex flex-column">
-                          <h5 class="card-title">${safeTitle} (${movie.year})</h5>
-                          <p class="card-text flex-grow-1 small">${safeOverview}</p>
-                          <button class="btn btn-sm btn-success btn-add-movie mt-auto" data-tmdb-id="${movie.id}">
-                             <i class="fas fa-plus me-1"></i> Ajouter
-                          </button>
-                      </div>
-                  </div>
-              </div>
-          `;
-      }).join('');
+      return `
+        <div class="search-card">
+          <img src="${poster}" alt="${safeTitle}" loading="lazy">
+          <div class="search-card-body">
+            <h5>${safeTitle} (${movie.year})</h5>
+            <p>${safeOverview}</p>
+            <button class="btn btn-success btn-sm btn-add-movie" data-tmdb-id="${movie.id}">
+              <i class="fas fa-plus"></i> Ajouter
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  function populateAndShowModal(details: MovieDetails) {
-      const setVal = (id: string, val: string) => { 
-          const el = getById<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(id);
-          if(el) el.value = val || ''; 
-      };
-      
-      const setCheck = (id: string, checked: boolean) => {
-          const el = getById<HTMLInputElement>(id);
-          if(el) el.checked = checked;
-      };
+  // --- Modal ---
+  function populateAndShowModal(d: MovieDetails) {
+    const setVal = (id: string, val: string) => { const el = $<HTMLInputElement>(id); if (el) el.value = val || ''; };
+    const setCheck = (id: string, v: boolean) => { const el = $<HTMLInputElement>(id); if (el) el.checked = v; };
+    const setText = (id: string, t: string) => { const el = $(id); if (el) el.textContent = t; };
 
-      const setText = (id: string, text: string) => {
-          const el = getById(id);
-          if(el) el.textContent = text;
-      };
+    const poster = $<HTMLImageElement>('modalPoster');
+    if (poster) poster.src = d.posterUrl || 'https://via.placeholder.com/200x300.png?text=Affiche';
 
-      // Display fields
-      const posterImg = getById<HTMLImageElement>('modalPoster');
-      if(posterImg) posterImg.src = details.posterUrl || 'https://via.placeholder.com/200x300.png?text=Affiche';
-      
-      setText('modalTitleYear', `${details.title || 'Inconnu'} (${details.year || 'N/A'})`);
-      setText('modalDirector', `Réalisateur: ${details.director || 'N/A'}`);
-      setText('modalActors', `Acteurs: ${details.actors || 'N/A'}`);
-      setText('modalGenres', `Genres: ${details.genres || 'N/A'}`);
-      setText('modalDuration', `Durée: ${details.duration || 'N/A'}`);
-      setVal('modalPlot', details.plot || '');
+    setText('modalTitleYear', `${d.title || 'Inconnu'} (${d.year || 'N/A'})`);
+    setText('modalDirector', `Réalisateur: ${d.director || 'N/A'}`);
+    setText('modalActors', `Acteurs: ${d.actors || 'N/A'}`);
+    setText('modalGenres', `Genres: ${d.genres || 'N/A'}`);
+    setText('modalDuration', `Durée: ${d.duration || 'N/A'}`);
+    setVal('modalPlot', d.plot || '');
 
-      // Input fields
-      setVal('modalDate', details.dateAdded || new Date().toLocaleDateString('en-US'));
-      setVal('modalStatus', details.status || 'Vu');
-      setCheck('modalSuiteCheck', String(details.suite).toUpperCase() === 'TRUE');
-      setVal('modalNote', details.note || '');
-      setVal('modalRemarques', details.remarques || '');
+    setVal('modalDate', d.dateAdded || new Date().toLocaleDateString('en-US'));
+    setVal('modalStatus', d.status || 'Vu');
+    setCheck('modalSuiteCheck', String(d.suite).toUpperCase() === 'TRUE');
+    setVal('modalNote', d.note || '');
+    setVal('modalRemarques', d.remarques || '');
 
-      // Hidden fields
-      setVal('modalTitle', details.title || '');
-      setVal('modalYear', details.year || '');
-      setVal('modalDirectorHidden', details.director || '');
-      setVal('modalActorsHidden', details.actors || '');
-      setVal('modalGenresHidden', details.genres || '');
-      setVal('modalDurationHidden', details.duration || '');
-      setVal('modalPlotHidden', details.plot || '');
-      setVal('modalImdbLink', details.imdbLink || '');
-      setVal('modalTrailerLink', details.trailerLink || '');
-      setVal('modalPosterUrl', details.posterUrl || '');
-      setVal('modalImdbScore', details.imdbScore || '');
-      setVal('modalRtScore', details.rtScore || '');
+    setVal('modalTitle', d.title || '');
+    setVal('modalYear', d.year || '');
+    setVal('modalDirectorHidden', d.director || '');
+    setVal('modalActorsHidden', d.actors || '');
+    setVal('modalGenresHidden', d.genres || '');
+    setVal('modalDurationHidden', d.duration || '');
+    setVal('modalPlotHidden', d.plot || '');
+    setVal('modalImdbLink', d.imdbLink || '');
+    setVal('modalTrailerLink', d.trailerLink || '');
+    setVal('modalPosterUrl', d.posterUrl || '');
+    setVal('modalImdbScore', d.imdbScore || '');
+    setVal('modalRtScore', d.rtScore || '');
 
-      addMovieModal.show();
+    addMovieModal.show();
   }
-
 
   function handleSaveMovie() {
-    showLoading(saveSpinner, saveMovieButton); 
+    showLoading(saveSpinner, saveMovieButton);
     clearFeedback();
 
-    const getVal = (id: string) => getById<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(id).value;
-    const getCheck = (id: string) => getById<HTMLInputElement>(id).checked;
+    const v = (id: string) => $<HTMLInputElement>(id).value;
+    const c = (id: string) => $<HTMLInputElement>(id).checked;
 
     const movieData: MovieDetails = {
-        dateAdded: getVal('modalDate'),
-        status: getVal('modalStatus'),
-        suite: getCheck('modalSuiteCheck') ? 'TRUE' : 'FALSE',
-        note: getVal('modalNote'),
-        remarques: getVal('modalRemarques'),
-        title: getVal('modalTitle'),
-        year: getVal('modalYear'),
-        director: getVal('modalDirectorHidden'),
-        actors: getVal('modalActorsHidden'),
-        genres: getVal('modalGenresHidden'),
-        duration: getVal('modalDurationHidden'),
-        plot: getVal('modalPlotHidden'), 
-        imdbLink: getVal('modalImdbLink'),
-        trailerLink: getVal('modalTrailerLink'),
-        posterUrl: getVal('modalPosterUrl'),
-        imdbScore: getVal('modalImdbScore'), 
-        rtScore: getVal('modalRtScore')      
+      dateAdded: v('modalDate'), status: v('modalStatus'),
+      suite: c('modalSuiteCheck') ? 'TRUE' : 'FALSE',
+      note: v('modalNote'), remarques: v('modalRemarques'),
+      title: v('modalTitle'), year: v('modalYear'),
+      director: v('modalDirectorHidden'), actors: v('modalActorsHidden'),
+      genres: v('modalGenresHidden'), duration: v('modalDurationHidden'),
+      plot: v('modalPlotHidden'),
+      imdbLink: v('modalImdbLink'), trailerLink: v('modalTrailerLink'),
+      posterUrl: v('modalPosterUrl'),
+      imdbScore: v('modalImdbScore'), rtScore: v('modalRtScore'),
     };
 
     google.script.run
-        .withSuccessHandler((response: string) => {
-            hideLoading(saveSpinner, saveMovieButton);
-            addMovieModal.hide(); 
-            showFeedback(response, true); 
-            loadMovies(); 
-        })
-        .withFailureHandler((error: Error) => {
-            hideLoading(saveSpinner, saveMovieButton);
-            showFeedback("Erreur lors de l'enregistrement: " + error.message, false);
-        })
-        .addMovie(movieData); 
+      .withSuccessHandler((resp: string) => {
+        hideLoading(saveSpinner, saveMovieButton);
+        addMovieModal.hide();
+        showFeedback(resp, true);
+        loadMovies();
+      })
+      .withFailureHandler((err: Error) => {
+        hideLoading(saveSpinner, saveMovieButton);
+        showFeedback("Erreur: " + err.message, false);
+      })
+      .addMovie(movieData);
   }
 
-  function handleAddMovie(tmdbId: number, buttonElement: HTMLButtonElement) {
+  function handleAddMovie(tmdbId: number, btn: HTMLButtonElement) {
     clearFeedback();
-    
     google.script.run
-        .withSuccessHandler((movieDetails: MovieDetails) => {
-            populateAndShowModal(movieDetails); 
-            buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter';
-        })
-        .withFailureHandler((detailsError: Error) => {
-            showFeedback("Erreur lors de la récupération des détails: " + detailsError.message, false);
-            buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter';
-        })
-        .getTmdbDetails(tmdbId); 
+      .withSuccessHandler((details: MovieDetails) => {
+        populateAndShowModal(details);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> Ajouter';
+      })
+      .withFailureHandler((err: Error) => {
+        showFeedback("Erreur: " + err.message, false);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-plus"></i> Ajouter';
+      })
+      .getTmdbDetails(tmdbId);
   }
