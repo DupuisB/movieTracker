@@ -278,10 +278,11 @@
     if (poster) poster.src = d.posterUrl || 'https://via.placeholder.com/200x300.png?text=Affiche';
 
     setText('modalTitleYear', `${d.title || 'Inconnu'} (${d.year || 'N/A'})`);
-    setText('modalDirector', `Réalisateur: ${d.director || 'N/A'}`);
-    setText('modalActors', `Acteurs: ${d.actors || 'N/A'}`);
-    setText('modalGenres', `Genres: ${d.genres || 'N/A'}`);
-    setText('modalDuration', `Durée: ${d.duration || 'N/A'}`);
+    setText('modalDirector', d.director || 'N/A');
+    setText('modalActors', d.actors || 'N/A');
+    setText('modalGenres', d.genres || 'N/A');
+    setText('modalDuration', d.duration || 'N/A');
+    setText('modalPlotDisplay', d.plot || '');
     setVal('modalPlot', d.plot || '');
 
     setVal('modalDate', d.dateAdded || new Date().toLocaleDateString('en-US'));

@@ -4,15 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Movie Tracker</title>
-    <!-- Google Fonts — Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- App CSS -->
     <link rel="stylesheet" href="./style.css">
   </head>
   <body>
@@ -49,7 +45,7 @@
 
         <div id="movieListLoading" class="loading-state d-none">
           <div class="spinner"></div>
-          <p style="margin-top:0.75rem">Chargement…</p>
+          <p style="margin-top:0.75rem;color:var(--text-muted)">Chargement…</p>
         </div>
         <div id="movieListError" class="alert alert-danger d-none" role="alert"></div>
         <div id="movieGrid" class="movie-grid"></div>
@@ -57,83 +53,76 @@
 
       <!-- Add Movie Modal -->
       <div class="modal fade" id="addMovieModal" tabindex="-1" aria-labelledby="addMovieModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
           <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="addMovieModalLabel">Ajouter un film</h5>
+              <h5 class="modal-title" id="addMovieModalLabel"><i class="fas fa-plus-circle me-2" style="color:var(--accent)"></i>Ajouter un film</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
               <form id="addMovieForm">
-                <input type="hidden" id="modalTmdbData" value="">
-                <div class="row g-3">
-                  <!-- Left: Poster & Info -->
-                  <div class="col-md-4 text-center">
-                    <img id="modalPoster" src="https://via.placeholder.com/200x300.png?text=Affiche" class="img-fluid rounded mb-3" alt="Affiche">
-                    <h6 id="modalTitleYear" class="mb-1">Titre (Année)</h6>
-                    <p id="modalDirector" class="text-muted small mb-1">Réalisateur</p>
-                    <p id="modalActors" class="text-muted small">Acteurs</p>
-                    <p id="modalGenres" class="text-muted small fst-italic">Genres</p>
-                    <p id="modalDuration" class="text-muted small">Durée</p>
-                  </div>
-                  <!-- Right: Editable -->
-                  <div class="col-md-8">
-                    <div class="mb-3">
-                      <label for="modalPlot" class="form-label">Synopsis</label>
-                      <textarea class="form-control" id="modalPlot" rows="3" readonly></textarea>
-                    </div>
-                    <div class="row g-2 mb-3">
-                      <div class="col-sm-6">
-                        <label for="modalDate" class="form-label">Date d'ajout</label>
-                        <input type="text" class="form-control" id="modalDate" placeholder="jj/mm/aaaa">
-                      </div>
-                      <div class="col-sm-6">
-                        <label for="modalStatus" class="form-label">Statut</label>
-                        <select class="form-select" id="modalStatus">
-                          <option selected>Vu</option>
-                          <option>À voir</option>
-                          <option>Abandonné</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="row g-2 mb-3">
-                      <div class="col-sm-6 d-flex align-items-center">
-                        <div class="form-check mt-2">
-                          <input class="form-check-input" type="checkbox" id="modalSuiteCheck">
-                          <label class="form-check-label" for="modalSuiteCheck">Suite à voir ?</label>
-                        </div>
-                      </div>
-                      <div class="col-sm-6">
-                        <label for="modalNote" class="form-label">Ma Note (/20)</label>
-                        <input type="number" step="0.5" class="form-control" id="modalNote" placeholder="Ex: 15.5">
-                      </div>
-                    </div>
-                    <div class="mb-3">
-                      <label for="modalRemarques" class="form-label">Remarques</label>
-                      <textarea class="form-control" id="modalRemarques" rows="2"></textarea>
-                    </div>
-                    <!-- Hidden fields -->
-                    <input type="hidden" id="modalImdbLink">
-                    <input type="hidden" id="modalTrailerLink">
-                    <input type="hidden" id="modalPosterUrl">
-                    <input type="hidden" id="modalImdbScore">
-                    <input type="hidden" id="modalRtScore">
-                    <input type="hidden" id="modalTitle">
-                    <input type="hidden" id="modalYear">
-                    <input type="hidden" id="modalDirectorHidden">
-                    <input type="hidden" id="modalActorsHidden">
-                    <input type="hidden" id="modalGenresHidden">
-                    <input type="hidden" id="modalDurationHidden">
-                    <input type="hidden" id="modalPlotHidden">
+                <!-- Movie info display (read-only) -->
+                <div class="modal-movie-info">
+                  <img id="modalPoster" src="https://via.placeholder.com/200x300.png?text=Affiche" alt="Affiche">
+                  <div class="modal-movie-details">
+                    <h4 id="modalTitleYear">Titre (Année)</h4>
+                    <div class="detail-row"><i class="fas fa-user"></i> <span id="modalDirector">Réalisateur</span></div>
+                    <div class="detail-row"><i class="fas fa-users"></i> <span id="modalActors">Acteurs</span></div>
+                    <div class="detail-row"><i class="fas fa-tags"></i> <span id="modalGenres">Genres</span></div>
+                    <div class="detail-row"><i class="fas fa-clock"></i> <span id="modalDuration">Durée</span></div>
+                    <p class="modal-synopsis" id="modalPlotDisplay"></p>
                   </div>
                 </div>
+
+                <!-- Editable fields -->
+                <div class="modal-form-section">
+                  <div class="form-group">
+                    <label for="modalDate"><i class="fas fa-calendar-day me-1"></i>Date d'ajout</label>
+                    <input type="text" id="modalDate" placeholder="mm/dd/yyyy">
+                  </div>
+                  <div class="form-group">
+                    <label for="modalStatus"><i class="fas fa-flag me-1"></i>Statut</label>
+                    <select id="modalStatus">
+                      <option selected>Vu</option>
+                      <option>À voir</option>
+                      <option>Abandonné</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="modalNote"><i class="fas fa-star me-1"></i>Ma Note (/20)</label>
+                    <input type="number" step="0.5" id="modalNote" placeholder="Ex: 15.5">
+                  </div>
+                  <div class="form-check-row">
+                    <input type="checkbox" id="modalSuiteCheck">
+                    <label for="modalSuiteCheck">Suite à voir ?</label>
+                  </div>
+                  <div class="form-group field-full">
+                    <label for="modalRemarques"><i class="fas fa-comment me-1"></i>Remarques</label>
+                    <textarea id="modalRemarques" rows="2" placeholder="Notes personnelles…"></textarea>
+                  </div>
+                </div>
+
+                <!-- Hidden fields -->
+                <input type="hidden" id="modalPlot">
+                <input type="hidden" id="modalImdbLink">
+                <input type="hidden" id="modalTrailerLink">
+                <input type="hidden" id="modalPosterUrl">
+                <input type="hidden" id="modalImdbScore">
+                <input type="hidden" id="modalRtScore">
+                <input type="hidden" id="modalTitle">
+                <input type="hidden" id="modalYear">
+                <input type="hidden" id="modalDirectorHidden">
+                <input type="hidden" id="modalActorsHidden">
+                <input type="hidden" id="modalGenresHidden">
+                <input type="hidden" id="modalDurationHidden">
+                <input type="hidden" id="modalPlotHidden">
               </form>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
               <button type="button" class="btn btn-accent" id="saveMovieButton">
                 <span id="saveSpinner" class="spinner spinner-sm d-none"></span>
-                Enregistrer
+                <i class="fas fa-save me-1"></i>Enregistrer
               </button>
             </div>
           </div>
@@ -142,9 +131,7 @@
 
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <!-- App JS -->
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
